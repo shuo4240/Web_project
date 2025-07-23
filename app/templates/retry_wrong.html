@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}錯題回顧{% endblock %}
+
+{% block content %}
+
+<section class="playlist-details">
+   <div class="quiz-container" style="padding-left: 40px; padding-right: 40px;">
+      <h1 class="heading">錯題回顧（共 {{ wrong_answers|length }} 題）</h1>
+
+      {% for ans in wrong_answers %}
+      <div class="quiz-question">
+         <h5>Q{{ loop.index }}：{{ ans.question_text }}</h5>
+
+         <div class="quiz-option {% if ans.selected_option == 'answer_a' and not ans.is_correct %}wrong{% elif ans.correct_option == 'answer_a' %}correct{% endif %}">
+            A. {{ ans.answer_a }}
+         </div>
+         <div class="quiz-option {% if ans.selected_option == 'answer_b' and not ans.is_correct %}wrong{% elif ans.correct_option == 'answer_b' %}correct{% endif %}">
+            B. {{ ans.answer_b }}
+         </div>
+         <div class="quiz-option {% if ans.selected_option == 'answer_c' and not ans.is_correct %}wrong{% elif ans.correct_option == 'answer_c' %}correct{% endif %}">
+            C. {{ ans.answer_c }}
+         </div>
+         <div class="quiz-option {% if ans.selected_option == 'answer_d' and not ans.is_correct %}wrong{% elif ans.correct_option == 'answer_d' %}correct{% endif %}">
+            D. {{ ans.answer_d }}
+         </div>
+
+         <p>你的答案：{{ ans.selected_option[-1]|upper }}</p>
+         <p>正確答案：{{ ans.correct_option[-1]|upper }}</p>
+
+         {% if ans.explanation %}
+         <div class="quiz-explanation">
+            <strong>解析：</strong><br>
+            {{ ans.explanation | safe }}
+         </div>
+         {% endif %}
+      </div>
+      {% endfor %}
+
+      <a class="inline-btn" href="{{ url_for('home') }}">返回首頁</a>
+   </div>
+</section>
+
+{% endblock %}

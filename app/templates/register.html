@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}註冊{% endblock %}
+
+{% block content %}
+
+<section class="form-container">
+   <form action="{{ url_for('register') }}" method="post" enctype="multipart/form-data">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for msg in messages %}
+              <div class="alert">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <h3>立即註冊</h3>
+
+      <p>姓名 <span>*</span></p>
+      <input type="text" name="name" placeholder="請輸入姓名" required maxlength="50" class="box">
+
+      <p>電子信箱 <span>*</span></p>
+      <input type="email" name="email" placeholder="請輸入電子信箱" required maxlength="50" class="box">
+
+      <p>密碼 <span>*</span></p>
+      <input type="password" name="pass" placeholder="請輸入密碼" required maxlength="20" class="box">
+
+      <p>確認密碼 <span>*</span></p>
+      <input type="password" name="c_pass" placeholder="請再次輸入密碼" required maxlength="20" class="box">
+
+      <p>身分 <span>*</span></p>
+      <select name="role" required class="box">
+         <option value="">--請選擇身分--</option>
+         <option value="student">學生</option>
+         <option value="teacher">老師</option>
+      </select>
+
+      <input type="submit" value="註冊帳號" name="submit" class="btn">
+   </form>
+</section>
+
+{% endblock %}
+
+
+
+
+
+
+
+
+<footer class="footer">
+
+   &copy; copyright @ 2022 by <span>mr. web designer</span> | all rights reserved!
+
+</footer>
+
+<!-- custom js file link  -->
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+
+</body>
+</html>

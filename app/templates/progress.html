@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}測驗結果{% endblock %}
+
+{% block content %}
+<section class="playlist-details">
+    <h1 class="heading">測驗結果</h1>
+    <p>總共 {{ total }} 題，答對 {{ score }} 題，耗時 {{ elapsed_time }} 秒</p>
+
+    {% for result in results %}
+    <div class="question-block {% if result.is_correct %}correct{% else %}wrong{% endif %}">
+        <h3>Q{{ loop.index }}：{{ result.question }}</h3>
+        <p>
+            {% if result.is_correct %}
+                <span style="color: green; font-weight: bold;">
+                答對 ✅（正確答案是 {{ result.correct[-1]|upper }}. {{ result.options[result.correct] }}）
+                </span>
+            {% else %}
+                <span style="color: red; font-weight: bold;">
+                答錯 ❌（正確答案是 {{ result.correct[-1]|upper }}. {{ result.options[result.correct] }}）
+                </span>
+            {% endif %}
+        </p>
+
+        <ul style="list-style-type: none; padding-left: 0;">
+            {% for opt_key, opt_val in result.options.items() %}
+            {% set is_user = result.user_answer == opt_key %}
+            {% set is_correct = result.correct == opt_key %}
+            
+            <li style="margin-bottom: 5px;">
+                {% if is_user and not is_correct %}
+                    ❌ <strong>{{ opt_key[-1]|upper }}. {{ opt_val }}</strong>（你的答案，錯誤）
+                {% endif %}
+                
+                {% if is_correct %}
+                    ✔️ <strong>{{ opt_key[-1]|upper }}. {{ opt_val }}</strong>
+                    {% if is_user %}
+                        （你的答案，正確）
+                    {% else %}
+                        （正確答案）
+                    {% endif %}
+                {% endif %}
+
+                {% if not is_user and not is_correct %}
+                    <strong>{{ opt_key[-1]|upper }}. {{ opt_val }}</strong>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+
+        {% if result.explanation %}
+        <div class="explanation" style="margin-top: 10px; padding: 12px; background: #f9f9f9; border-left: 5px solid #4CAF50;">
+            <strong>解析：</strong>
+            <pre style="white-space: pre-wrap; font-family: inherit;">{{ result.explanation }}</pre>
+        </div>
+        {% endif %}
+
+        {% if result.related_articles %}
+        <div class="related-articles" style="margin-top: 15px; padding: 12px; background: #eef6ff; border-left: 5px solid #2196F3;">
+            <strong>🔍 相關文章：</strong>
+            <ul style="padding-left: 15px;">
+                {% for article in result.related_articles %}
+                <li style="margin-bottom: 8px;">
+                    <a href="{{ article.link }}" target="_blank" style="font-weight: bold; color: #1a0dab;">{{ article.title }}</a><br>
+                    <small style="color: #555;">{{ article.snippet }}</small>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <a href="{{ url_for('home') }}" class="inline-btn">返回首頁</a>
+</section>
+{% endblock %}

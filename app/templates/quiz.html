@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}小測驗{% endblock %}
+
+{% block content %}
+
+<section class="playlist-details">
+   <div class="quiz-container">
+      <h1 class="heading">小測驗（共 {{ questions|length }} 題）</h1>
+
+      <form action="{{ url_for('quiz_submit') }}" method="post" class="quiz-form">
+         {% for q in questions %}
+         <div class="quiz-question">
+            <h5>Q{{ loop.index }}：{{ q.question }}</h5>
+            {% for key, option in q.options %}
+            <div class="quiz-option">
+               <input type="radio"
+                      name="question_{{ q.id }}"
+                      value="{{ key }}"
+                      id="q{{ q.id }}_option{{ loop.index }}">
+               <label for="q{{ q.id }}_option{{ loop.index }}">
+                  {{ option }}
+               </label>
+            </div>
+            {% endfor %}
+         </div>
+         {% endfor %}
+         <button type="submit" class="inline-btn">提交答案</button>
+      </form>
+   </div>
+</section>
+
+{% endblock %}

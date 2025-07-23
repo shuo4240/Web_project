@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>飛船維修任務</title>
+  <style>
+    @font-face {
+        font-family: 'Cubic11';
+        src: url('/static/Cubic-11-main/fonts/ttf/Cubic_11.ttf') format('truetype');
+    }
+
+    body {
+        margin: 0;
+        height: 100vh;
+        overflow: hidden;
+        background-color: black;
+        background-image: url("/static/images/universe_pixel.jpeg");
+        background-repeat: no-repeat;
+        background-position: center top;
+        background-size: 60%;
+        image-rendering: pixelated;
+        font-family: 'Cubic11', monospace;
+        color: white;
+    }
+
+    #intro-scene, #transition-scene {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: black;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        box-sizing: border-box;
+        z-index: 10;
+    }
+
+    #dialogue-box, #transition-text {
+        width: 80%;
+        max-width: 700px;
+        background-color: #111;
+        border: 3px solid #888;
+        padding: 20px;
+        font-size: 20px;
+        line-height: 1.6;
+        color: white;
+        image-rendering: pixelated;
+        white-space: pre-wrap;
+    }
+
+    #start-game-btn, .next-btn {
+        margin-top: 20px;
+        font-size: 22px;
+        padding: 10px 20px;
+        font-family: 'Cubic11', monospace;
+        cursor: pointer;
+        background-color: #222;
+        border: 2px solid #aaa;
+        color: white;
+    }
+
+    #game-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding-top: 50px;
+    }
+
+    #message {
+        text-align: center;
+        font-size: 28px;
+        margin-bottom: 20px;
+    }
+
+    #countdown {
+        font-size: 48px;
+        color: red;
+        animation: blink 1s step-start infinite;
+        text-align: center;
+        margin: 10px 0;
+        font-weight: bold;
+    }
+
+    @keyframes blink {
+        50% { opacity: 0; }
+    }
+
+    #spaceship, #explosion {
+        width: 160px;
+        image-rendering: pixelated;
+        margin-bottom: 20px;
+    }
+
+    #explosion {
+        display: none;
+    }
+
+    .explosion {
+        font-size: 80px;
+        color: orange;
+        animation: shake 0.5s infinite;
+    }
+
+    @keyframes shake {
+        0% { transform: translate(0px, 0px); }
+        25% { transform: translate(5px, -5px); }
+        50% { transform: translate(-5px, 5px); }
+        75% { transform: translate(5px, 5px); }
+        100% { transform: translate(0px, 0px); }
+    }
+
+    #step-container {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 10px 0;
+    }
+
+    .card {
+        border: 1px solid #ccc;
+        padding: 10px 15px;
+        background: #222;
+        color: white;
+        cursor: grab;
+        font-size: 16px;
+    }
+
+    #dropzone {
+        border: 2px dashed #888;
+        padding: 10px;
+        min-height: 40px;
+        margin: 15px 0;
+        width: 25%;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+    .bulb_on{
+        width: 77px;
+        height: auto;
+        margin: 5px;
+    }
+    .box {
+        width: 90px;           
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: transparent;
+        border: none;         
+        margin: 10px;
+    }
+
+    .box-img {
+        width: 70px;            
+        height: auto;
+        image-rendering: pixelated;
+    }
+
+    .box-label {
+        margin-top: 5px;
+        font-size: 14px;
+        color: white;
+        text-align: center;
+    }
+    .draggable-part {
+        cursor: grab;
+        image-rendering: pixelated;
+    }
+    #maze {
+        display: grid;
+        grid-template-columns: repeat(5, 30px);
+        grid-template-rows: repeat(5, 30px);
+        gap: 2px;
+        background-color: transparent;
+        position: relative;
+    }
+
+    .cell {
+        width: 30px;
+        height: 30px;
+        image-rendering: pixelated;
+        border: 1px solid #555;
+        position: relative;
+    }
+
+    .wall {
+        background-color: black;
+    }
+
+    .path {
+        background-color: white;
+    }
+
+    .goal {
+        background-color: red;
+    }
+
+    .bomb-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        pointer-events: none;
+    }
+    #maze-ship {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        image-rendering: pixelated;
+        z-index: 2;
+        left: 0;
+        top: 0;
+    }
+
+    .ship {
+        background-image: url('/static/images/spaceship.png');
+        background-size: cover;
+    }
+    .cmd-block {
+        padding: 10px 15px;
+        background-color: #444;
+        border: 2px solid #aaa;
+        border-radius: 5px;
+        cursor: grab;
+        color: white;
+        font-size: 16px;
+        user-select: none;
+    }
+    .cmd-block.condition {
+        background-color: #5a3;
+    }
+    .cmd-block.loop {
+        background-color: #36a;
+    }
+    .maze-wrapper {
+        display: flex;
+        justify-content: center; /* 置中地圖 */
+        margin-top: 30px;
+    }
+    </style>
+</head>
+
+<body>
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <div id="intro-scene">
+        <div id="dialogue-box"></div>
+        <button id="start-game-btn" style="display:none;">開始任務</button>
+    </div>
+
+    <div id="game-container">
+        <h2>修復飛船--拆解問題</h2>
+        <div id="message">請依正確順序修復飛船系統：</div>
+        <div id="countdown" style="display: none;">5</div>
+        <img id="spaceship" src="/static/images/spaceship.png" />
+        <img id="explosion" src="" />
+
+        <div id="step-container">
+        <div class="card" draggable="true">裝上電池</div>
+        <div class="card" draggable="true">打開機器</div>
+        <div class="card" draggable="true">換新電線</div>
+        <div class="card" draggable="true">按下啟動鍵</div>
+        </div>
+
+        <div id="dropzone"></div>
+        <button class="next-btn" id="confirm-btn">確認順序</button>
+    </div>
+
+    <div id="transition-scene" style="display:none;">
+        <div id="transition-text"></div>
+    </div>
+
+    <div id="level2" style="display:none; text-align:center; padding:50px;">
+        <h2>訊號辨識--規律辨識</h2>
+        <p>觀察下列燈泡的閃爍順序(由左至右)，判斷其規律。</p>
+        <div id="light-sequence" style="margin-top: 20px;">
+            <img class="bulb" data-state="off" src="/static/images/bulb_off.png" width="60" />
+            <img class="bulb_on" data-state="on"  src="/static/images/bulb_on.png" width="60" />
+            <img class="bulb" data-state="off" src="/static/images/bulb_off.png" width="60" />
+            <img class="bulb" data-state="off" src="/static/images/bulb_off.png" width="60" />
+            <img class="bulb_on" data-state="on"  src="/static/images/bulb_on.png" width="60" />
+            <img class="bulb" data-state="off" src="/static/images/bulb_off.png" width="60" />
+            <img class="bulb" data-state="off" src="/static/images/bulb_off.png" width="60" />
+            <img class="bulb_on" data-state="on"  src="/static/images/bulb_on.png" width="60" />
+        </div>
+
+        <button class="next-btn" id="analyze-btn" style="margin-top: 20px;">我看出規律了</button>
+
+        <div id="choice-buttons" style="margin-top: 20px; display:none;">
+            <p>請選擇下一個燈泡的狀態：</p>
+            <button class="next-btn" data-answer="on">亮</button>
+            <button class="next-btn" data-answer="off">暗</button>
+        </div>
+
+        <p id="pattern-feedback" style="margin-top: 20px;"></p>
+    </div>
+
+    <!-- 第三關 -->
+    <div id="level3" style="display:none; text-align:center; padding:50px;">
+        <h2>零件整理--抽象化任務</h2>
+        <p>將零件放入正確的箱子裡</p>
+        <div style="display:flex; justify-content:center; gap:40px; flex-wrap:wrap; margin-top:30px;">
+            <img class="draggable-part" src="/static/images/battery.png" data-type="battery" width="80">
+            <img class="draggable-part" src="/static/images/screw.png" data-type="screw" width="80">
+            <img class="draggable-part" src="/static/images/wire.png" data-type="wire" width="80">
+            <img class="draggable-part" src="/static/images/wrench.png" data-type="wrench" width="80">
+            <img class="draggable-part" src="/static/images/wire.png" data-type="wire" width="80">
+            <img class="draggable-part" src="/static/images/wrench.png" data-type="wrench" width="80">
+            <img class="draggable-part" src="/static/images/battery.png" data-type="battery" width="80">
+            <img class="draggable-part" src="/static/images/screw.png" data-type="screw" width="80">
+            <img class="draggable-part" src="/static/images/battery.png" data-type="battery" width="80">
+        </div>
+
+        <div style="display:flex; justify-content:center; gap:40px; flex-wrap:wrap; margin-top:40px;">
+            <div class="box" data-type="battery">
+                <img src="/static/images/box.png" class="box-img" />
+                <div class="box-label">電池箱</div>
+            </div>
+            <div class="box" data-type="screw">
+                <img src="/static/images/box.png" class="box-img" />
+                <div class="box-label">螺絲箱</div>
+            </div>
+             <div class="box" data-type="wire">
+                <img src="/static/images/box.png" class="box-img" />
+                <div class="box-label">電線箱</div>
+            </div>
+            <div class="box" data-type="wrench">
+                <img src="/static/images/box.png" class="box-img" />
+                <div class="box-label">工具箱</div>
+            </div>           
+        </div>
+        <p id="level3-result" style="margin-top:20px; font-size:20px;"></p>
+    </div>
+
+    <!-- 第四關 -->
+    <div id="level4" style="display:none; text-align:center; padding:50px;">
+        <h2>指令排序 -- 演算法設計任務</h2>
+        <p>拖曳指令卡片進入序列區，再按下執行，讓飛船抵達目標星球！</p>
+
+        <!-- 卡片區 -->
+        <div id="cmd-pool" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:20px;">
+            <!-- 基本移動 -->
+            <div class="cmd-block" draggable="true" data-cmd="forward">前進</div>
+            <div class="cmd-block" draggable="true" data-cmd="backward">後退</div>
+            <div class="cmd-block" draggable="true" data-cmd="left">左轉</div>
+            <div class="cmd-block" draggable="true" data-cmd="right">右轉</div>
+        
+            <!-- 條件方塊 -->
+            <div class="cmd-block condition" draggable="true" data-cmd="if-bomb">
+                如果
+                <select class="condition-direction">
+                <option value="forward">前</option>
+                <option value="backward">後</option>
+                <option value="left">左</option>
+                <option value="right">右</option>
+                </select>
+                有炸彈，則清除
+            </div>
+            
+            <div class="cmd-block loop" draggable="true" data-cmd="repeat">
+                重複 <input type="number" min="1" max="10" value="2" class="loop-count" style="width:40px;" /> 次
+                    <select class="condition-direction">
+                    <option value="forward">前進</option>
+                    <option value="backward">後退</option>
+                    <option value="left">左轉</option>
+                    <option value="right">右轉</option>
+                    </select>  
+            </div>            
+
+        </div>
+
+        <!-- 放置順序區 -->
+        <div id="cmd-dropzone" style="border:2px dashed #aaa; min-height:50px; padding:10px; display:flex; gap:10px; justify-content:center; background:rgba(255,255,255,0.1); width:60%; margin:0 auto; flex-wrap:wrap;"></div>
+
+        <!-- 飛船地圖 -->
+        <div class="maze-wrapper">
+            <div id="maze" style="position: relative;">
+                <div class="cell wall"></div>
+                <div class="cell path"></div>
+                <div class="cell wall"></div>
+                <div class="cell path"></div>
+                <div class="cell wall"></div>
+
+                <div class="cell path"></div>
+                <div class="cell path bomb"><img src="/static/images/bomb.png" class="bomb-img"></div>
+                <div class="cell path"></div>
+                <div class="cell path"></div>
+                <div class="cell path"></div>
+
+                <div class="cell wall"></div>
+                <div class="cell path"></div>
+                <div class="cell wall"></div>
+                <div class="cell path"></div>
+                <div class="cell path"></div>
+
+                <div class="cell path"></div>
+                <div class="cell path"></div>
+                <div class="cell path"></div>
+                <div class="cell wall"></div>
+                <div class="cell goal"></div>
+
+                <div class="cell wall"></div>
+                <div class="cell wall"></div>
+                <div class="cell path"></div>
+                <div class="cell wall"></div>
+                <div class="cell wall"></div>
+
+                <div id="maze-ship" class="ship"></div>
+            </div>
+        </div>
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="next-btn" onclick="executeMazeCommands()">執行</button>
+            </div>        
+    </div>
+
+  <script>
+    // === 前導動畫 ===
+    const introLines = [
+      "太空日誌：第 42 天。",
+      "我們的飛船在太空遭遇了不明物體攻擊……",
+      "飛船損壞，必須手動維修才能繼續旅程。",
+      "任務1：修復飛船。",
+      "請小心操作，失敗將造成爆炸！"
+    ];
+    const dialogueBox = document.getElementById("dialogue-box");
+    const startGameBtn = document.getElementById("start-game-btn");
+    const gameContainer = document.getElementById("game-container");
+    const introScene = document.getElementById("intro-scene");
+
+    let lineIndex = 0;
+    function showNextLine() {
+      if (lineIndex < introLines.length) {
+        const line = document.createElement("p");
+        line.textContent = introLines[lineIndex];
+        dialogueBox.appendChild(line);
+        lineIndex++;
+        setTimeout(showNextLine, 2000);
+      } else {
+        startGameBtn.style.display = "inline-block";
+      }
+    }
+
+    startGameBtn.addEventListener("click", () => {
+      introScene.style.display = "none";
+      gameContainer.style.display = "flex";
+    });
+    window.onload = () => {
+      gameContainer.style.display = "none";
+      showNextLine();
+    };
+
+    // === 第一關 ===
+    const correctOrder = ["打開機器", "換新電線", "裝上電池", "按下啟動鍵"];
+    const dropzone = document.getElementById("dropzone");
+    const cards = document.querySelectorAll(".card");
+    const confirmBtn = document.getElementById("confirm-btn");
+    const countdownEl = document.getElementById("countdown");
+    const explosionEl = document.getElementById("explosion");
+    const spaceshipEl = document.getElementById("spaceship");
+    const message = document.getElementById("message");
+    let dragged;
+
+    cards.forEach(card => {
+      card.addEventListener("dragstart", e => dragged = card);
+    });
+
+    dropzone.addEventListener("dragover", e => e.preventDefault());
+    dropzone.addEventListener("drop", e => {
+      e.preventDefault();
+      if (!dropzone.contains(dragged)) {
+        dropzone.appendChild(dragged);
+      }
+    });
+
+    confirmBtn.addEventListener("click", () => {
+      const steps = Array.from(dropzone.children).map(el => el.textContent.trim());
+      if (steps.length < 4) {
+        alert("你還沒完成所有步驟！");
+        return;
+      }
+      const correct = steps.every((step, i) => step === correctOrder[i]);
+      if (correct) {
+        message.textContent = "修復成功！準備啟動飛船！";
+        confirmBtn.disabled = true;
+        setTimeout(() => {
+          showTransitionToLevel2();
+        }, 1500);
+      } else {
+        message.textContent = "修復失敗！飛船即將爆炸！";
+        confirmBtn.style.display = "none";
+        startCountdown();
+      }
+    });
+
+    function startCountdown() {
+      let timeLeft = 5;
+      countdownEl.style.display = "block";
+      countdownEl.textContent = timeLeft;
+
+      const interval = setInterval(() => {
+        timeLeft--;
+        countdownEl.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          countdownEl.textContent = "💥 BOOM！";
+          countdownEl.classList.add("explosion");
+          message.textContent = "飛船爆炸！任務失敗";
+          spaceshipEl.style.display = "none";
+          playExplosion();
+          const boom = new Audio('/static/sounds/explosion.mp3');
+          boom.play();
+        }
+      }, 1000);
+    }
+
+    const explosionFrames = [
+      "/static/images/explosion1.png",
+      "/static/images/explosion2.png",
+      "/static/images/explosion3.png",
+      "/static/images/explosion4.png"
+    ];
+
+    function playExplosion() {
+      let frame = 0;
+      explosionEl.style.display = "block";
+      const anim = setInterval(() => {
+        if (frame >= explosionFrames.length) {
+          clearInterval(anim);
+          return;
+        }
+        explosionEl.src = explosionFrames[frame];
+        frame++;
+      }, 200);
+    }
+
+    // === 第二關 過場 + 開始 ===
+    function showTransitionToLevel2() {
+      const lines = [
+        "飛船成功啟動！",
+        "但系統警告：前方訊號異常。",
+        "任務2：請找出訊號的規律！"
+      ];
+
+      const transitionScene = document.getElementById("transition-scene");
+      const transitionText = document.getElementById("transition-text");
+
+      gameContainer.style.display = "none";
+      transitionScene.style.display = "flex";
+
+      let lineIndex = 0;
+      let charIndex = 0;
+      transitionText.textContent = "";
+
+      function typeLine() {
+        if (lineIndex >= lines.length) {
+          setTimeout(() => {
+            transitionScene.style.display = "none";
+            showSecondLevel();
+          }, 1000);
+          return;
+        }
+
+        const line = lines[lineIndex];
+        if (charIndex < line.length) {
+          transitionText.textContent += line[charIndex];
+          charIndex++;
+          setTimeout(typeLine, 50);
+        } else {
+          transitionText.textContent += "\n";
+          lineIndex++;
+          charIndex = 0;
+          setTimeout(typeLine, 600);
+        }
+      }
+
+      typeLine();
+    }
+
+
+    function showSecondLevel() {
+        const level2 = document.getElementById("level2");
+        level2.style.display = "block";
+
+        // 靜態顯示的燈泡已由 HTML 建立
+        const analyzeBtn = document.getElementById("analyze-btn");
+        const choiceButtons = document.getElementById("choice-buttons");
+        const feedback = document.getElementById("pattern-feedback");
+
+        // 正確答案為下一個燈泡狀態（根據規律決定）
+        const correctNext = "off"; // 你可以改為 "on" 或 "off"
+
+        analyzeBtn.addEventListener("click", () => {
+            analyzeBtn.style.display = "none";
+            choiceButtons.style.display = "block";
+        });
+
+        choiceButtons.querySelectorAll("button").forEach(btn => {
+            btn.addEventListener("click", () => {
+            const answer = btn.getAttribute("data-answer");
+            if (answer === correctNext) {
+                feedback.textContent = "答對了！你找到正確規律！";
+                feedback.style.color = "lightgreen";
+                setTimeout(() => {
+                    showTransitionToLevel3();
+                }, 1500);
+            } else {
+                feedback.textContent = "答錯了，再觀察一下燈泡的變化！";
+                feedback.style.color = "red";
+            }
+            // 鎖定按鈕
+            choiceButtons.querySelectorAll("button").forEach(b => b.disabled = true);
+            });
+        });
+    }
+
+    function showTransitionToLevel3() {
+        const level2 = document.getElementById("level2");
+        const transitionScene = document.getElementById("transition-scene");
+        const transitionText = document.getElementById("transition-text");
+
+        level2.style.display = "none";
+        transitionScene.style.display = "flex";
+        transitionText.textContent = "";
+
+        const lines = [
+            "成功辨識訊號規律！",
+            "但受到撞擊的船艙內一片混亂……",
+            "任務3：請整理散落的零件，分類放好。"
+        ];
+
+        let lineIndex = 0;
+        let charIndex = 0;
+
+        function typeLine() {
+            if (lineIndex >= lines.length) {
+                setTimeout(() => {
+                    transitionScene.style.display = "none";
+                    showThirdLevel();
+                }, 1000);
+                return;
+            }
+
+            const line = lines[lineIndex];
+            if (charIndex < line.length) {
+                transitionText.textContent += line[charIndex];
+                charIndex++;
+                setTimeout(typeLine, 50);
+            } else {
+                transitionText.textContent += "\n";
+                lineIndex++;
+                charIndex = 0;
+                setTimeout(typeLine, 600);
+            }
+        }
+
+        typeLine();
+    }
+
+    function showThirdLevel() {
+        const level3 = document.getElementById("level3");
+        level3.style.display = "block";
+
+        const parts = document.querySelectorAll(".draggable-part");
+        const boxes = document.querySelectorAll(".box");
+        const resultText = document.getElementById("level3-result");
+
+        let draggedPart = null;
+
+        parts.forEach(part => {
+            part.setAttribute("draggable", true);
+            part.addEventListener("dragstart", e => {
+                draggedPart = part;
+            });
+        });
+
+        boxes.forEach(box => {
+            box.addEventListener("dragover", e => e.preventDefault());
+            box.addEventListener("drop", e => {
+                e.preventDefault();
+                if (draggedPart && box.getAttribute("data-type") === draggedPart.getAttribute("data-type")) {
+                    draggedPart.remove();
+                    draggedPart = null;
+                    resultText.textContent = "";
+                    checkCompletion();
+                } else {
+                    resultText.textContent = "放錯箱子了，請再確認！";
+                    resultText.style.color = "red";
+                }
+            });
+        });
+
+        function checkCompletion() {
+            const remainingParts = document.querySelectorAll(".draggable-part");
+            if (remainingParts.length === 0) {
+                resultText.textContent = "恭喜你完成整理任務！";
+                resultText.style.color = "lightgreen";
+                setTimeout(() => {
+                    showTransitionToLevel4();
+                }, 1500);
+            }
+        }
+    }
+    function showTransitionToLevel4() {
+        const level3 = document.getElementById("level3");
+        const transitionScene = document.getElementById("transition-scene");
+        const transitionText = document.getElementById("transition-text");
+
+        level3.style.display = "none";
+        transitionScene.style.display = "flex";
+        transitionText.textContent = "";
+
+        const lines = [
+            "一切終於準備就緒。",
+            "但眼前是一座充滿障礙的迷宮星雲……",
+            "導航失效，我們必須設計逃脫路線。",
+            "任務4：設計演算法，讓飛船安全駛離迷宮！"
+        ];
+
+        let lineIndex = 0;
+        let charIndex = 0;
+
+        function typeLine() {
+            if (lineIndex >= lines.length) {
+                setTimeout(() => {
+                    transitionScene.style.display = "none";
+                    showFourthLevel();  // 接關
+                }, 1000);
+                return;
+            }
+
+            const line = lines[lineIndex];
+            if (charIndex < line.length) {
+                transitionText.textContent += line[charIndex];
+                charIndex++;
+                setTimeout(typeLine, 50);
+            } else {
+                transitionText.textContent += "\n";
+                lineIndex++;
+                charIndex = 0;
+                setTimeout(typeLine, 600);
+            }
+        }
+
+        typeLine();
+    }
+
+    function showFourthLevel() {
+        const level4 = document.getElementById("level4");
+        const transitionScene = document.getElementById("transition-scene");
+        const level3 = document.getElementById("level3");
+
+        // 隱藏過場與第三關
+        transitionScene.style.display = "none";
+        level3.style.display = "none";
+
+        // 顯示第四關
+        level4.style.display = "block";
+
+        // === 初始化拖曳方塊區 ===
+        const pool = document.getElementById("cmd-pool");
+        const seqZone = document.getElementById("cmd-dropzone");
+
+        let draggedCmd = null;
+
+        pool.querySelectorAll('.cmd-block').forEach(block => {
+            block.setAttribute("draggable", "true");
+            block.addEventListener("dragstart", e => {
+                draggedCmd = block;
+            });
+        });
+
+        seqZone.addEventListener("dragover", e => e.preventDefault());
+
+        seqZone.addEventListener("drop", e => {
+            e.preventDefault();
+            if (!draggedCmd) return;
+
+            const clone = draggedCmd.cloneNode(true);
+
+            // 保留迴圈次數與條件選項值
+            if (clone.querySelector('.loop-count')) {
+                clone.querySelector('.loop-count').value =
+                    draggedCmd.querySelector('.loop-count').value;
+            }
+
+            if (clone.querySelector('.condition-direction')) {
+                clone.querySelector('.condition-direction').value =
+                    draggedCmd.querySelector('.condition-direction').value;
+            }
+
+            // 使 clone 也可再次拖曳（可選）
+            clone.setAttribute("draggable", "true");
+            clone.addEventListener("dragstart", e => {
+                draggedCmd = clone;
+            });
+
+            seqZone.appendChild(clone);
+        });
+
+        // 重置飛船位置與方向
+        const ship = document.getElementById("maze-ship");
+        if (ship) {
+            ship.style.left = "0px";
+            ship.style.top = "0px";
+            ship.style.transform = "rotate(0deg)";
+        }
+
+        // 清空指令序列區
+        if (seqZone) {
+            seqZone.innerHTML = "";
+        }
+
+        // 清除第三關殘留零件與提示文字
+        const parts = document.querySelectorAll(".draggable-part");
+        parts.forEach(p => p.remove());
+
+        const resultText = document.getElementById("level3-result");
+        if (resultText) resultText.textContent = "";
+
+        // 初始定位
+        placeShipAt(4, 2);
+
+        // === 執行指令邏輯 ===
+        window.executeCommands = function () {
+            const commands = document.getElementById("cmd-dropzone").querySelectorAll(".cmd-block");
+            const ship = document.getElementById("maze-ship");
+            let row = 4;
+            let col = 2;
+            let direction = 0; // 0:上, 90:右, 180:下, 270:左
+
+            const delay = ms => new Promise(res => setTimeout(res, ms));
+
+            async function run() {
+                for (let cmd of commands) {
+                    const type = cmd.dataset.cmd;
+
+                    if (type === "move") {
+                        if (direction === 0) row -= 1;
+                        else if (direction === 90) col += 1;
+                        else if (direction === 180) row += 1;
+                        else if (direction === 270) col -= 1;
+
+                        placeShipAt(row, col);
+                        await delay(500);
+                    } else if (type === "turn-left") {
+                        direction = (direction + 270) % 360;
+                        ship.style.transform = `rotate(${direction}deg)`;
+                        await delay(300);
+                    } else if (type === "turn-right") {
+                        direction = (direction + 90) % 360;
+                        ship.style.transform = `rotate(${direction}deg)`;
+                        await delay(300);
+                    }
+                    // 你也可以在這裡加上 loop 或條件判斷邏輯
+                }
+            }
+
+            run();
+        };
+    }
+
+    function placeShipAt(row, col) {
+        const ship = document.getElementById("maze-ship");
+        const cellSize = 32;
+        const offsetX = -8;
+        const offsetY = -10;
+        ship.style.left = `${col * cellSize + offsetX}px`;
+        ship.style.top = `${row * cellSize + offsetY}px`;
+    }
+
+
+  </script>
+
+</body>
+</html>

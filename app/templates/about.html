@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}關於我們 - NCKU E-Learning Web{% endblock %}
+
+{% block content %}
+<section class="about">
+   <div class="row">
+      <div class="image">
+         <img src="{{ url_for('static', filename='images/about_us.png') }}" alt="">
+      </div>
+      <div class="content">
+         <h3>關於我們</h3>
+         <p>我們的 e-learning 平台致力於打造一個結合互動學習的數位學習環境。無論您是學生、老師，或是終身學習者，這裡都是您探索新知的理想空間。</p>
+      </div>
+   </div>
+</section>
+{% endblock %}

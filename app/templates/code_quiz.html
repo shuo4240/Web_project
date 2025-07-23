@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}程式測驗{% endblock %}
+
+{% block content %}
+<section class="playlist-details">
+  <div class="quiz-container">
+    <h1 class="heading">程式測驗：{{ question.title }}</h1>
+
+    <div class="quiz-question">
+      <h5>題目說明：</h5>
+      <p>{{ question.description }}</p>
+      <p>範例輸入：<code>{{ question.sample_input }}</code>；範例輸出：<code>{{ question.sample_output }}</code></p>
+    </div>
+
+    <form action="{{ url_for('submit_code') }}" method="post">
+      <input type="hidden" name="question_id" value="{{ question.id }}">
+
+      <div class="form-group">
+        <label for="source_code"><strong>請輸入 C++ 程式碼：</strong></label><br>
+        <textarea id="source_code" name="source_code" rows="15" style="width: 100%; font-family: monospace;">
+{{ question.default_code }}
+        </textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="stdin"><strong>測試輸入值：</strong></label><br>
+        <input type="text" id="stdin" name="stdin" placeholder="請輸入測試資料 (例如：{{ question.sample_input }})" style="width: 100%;">
+      </div>
+
+      <button type="submit" class="inline-btn">提交程式碼</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

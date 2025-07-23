@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}測驗紀錄{% endblock %}
+
+{% block content %}
+<section class="quiz-history">
+  <h1 class="heading" style="font-size: 2rem;">你的測驗紀錄</h1>
+
+  {% if results %}
+  <canvas id="scoreChart" width="600" height="300" style="margin-top: 2rem;"></canvas>
+
+  <table style="width: 100%; border-collapse: collapse; margin-top: 1em; font-size: 1.2rem;">
+    <thead>
+      <tr style="background-color: #f2f2f2;">
+        <th style="border: 1px solid #ccc; padding: 16px; background-color: white;">分數</th>
+        <th style="border: 1px solid #ccc; padding: 16px; background-color: white;">總答題時間（秒）</th>
+        <th style="border: 1px solid #ccc; padding: 16px; background-color: white;">作答時間</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for result in results %}
+      <tr>
+        <td style="border: 1px solid #ccc; padding: 16px; background-color: white; text-align: center;">{{ result.score }}</td>
+        <td style="border: 1px solid #ccc; padding: 16px; background-color: white; text-align: center;">{{ result.total_time }}</td>
+        <td style="border: 1px solid #ccc; padding: 16px; background-color: white; text-align: center;">{{ result.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <a href="{{ url_for('retry_wrong') }}" class="inline-btn">錯題回顧</a>
+
+  <!-- 安全嵌入資料 -->
+  <!-- 嵌入資料 -->
+  <script id="score-data" type="application/json">
+    {
+      "labels": {{ labels | tojson }},
+      "data": {{ scores | tojson }}
+    }
+  </script>
+
+  <!-- 繪製圖表 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const chartData = JSON.parse(document.getElementById('score-data').textContent);
+    const ctx = document.getElementById('scoreChart').getContext('2d');
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartData.labels,
+        datasets: [{
+          label: '分數變化',
+          data: chartData.data,
+          borderColor: 'rgba(75, 192, 192, 1)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          tension: 0.2
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              callback: function(value) {
+                return Number.isInteger(value) ? value : null;
+              }
+            }
+          }
+        }
+      }
+    });
+  </script>
+
+
+
+  {% else %}
+    <p style="margin-top: 1em; font-size: 1.2rem;">你尚未有任何測驗紀錄。</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>聯絡表單紀錄</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>留言紀錄</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>編號</th>
+                <th>姓名</th>
+                <th>Email</th>
+                <th>電話</th>
+                <th>留言內容</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in messages %}
+            <tr>
+                <td>{{ m.id }}</td>
+                <td>{{ m.name }}</td>
+                <td>{{ m.email }}</td>
+                <td>{{ m.number }}</td>
+                <td>{{ m.msg }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

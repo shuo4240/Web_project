@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}課程總覽{% endblock %}
+
+{% block content %}
+<section class="courses">
+   <div class="course-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <h1 class="heading" style="margin: 0;">課程列表</h1>
+      <a href="{{ url_for('add_course') }}" class="inline-btn">新增課程</a>
+   </div>
+
+   <div class="box-container">
+      <!-- 假資料（排版用） -->
+      {% for i in range(7, 10) %}
+      <div class="box">
+         <div class="tutor">
+            <img src="{{ url_for('static', filename='images/pic-1.png') }}" alt="">
+            <div class="info">
+               <h3>John</h3>
+               <span>2022-10-21</span>
+            </div>
+         </div>
+         <div class="thumb">
+            <img src="{{ url_for('static', filename='images/thumb-' ~ i ~ '.png') }}" alt="">
+            <span>10 部影片</span>
+         </div>
+         <h3 class="title">完整教學 {{ i-6 }}</h3>
+         <a href="{{ url_for('playlist', course_id=i) }}" class="inline-btn">觀看課程</a>
+      </div>
+      {% endfor %}
+
+      <!-- 真實資料（從資料庫撈） -->
+      {% for course in courses %}
+      <div class="box">
+         <div class="tutor">
+            <img src="{{ url_for('static', filename='images/pic-1.png') }}" alt="">
+            <div class="info">
+               <h3>{{ course.teacher_name }}</h3>
+               <span>{{ course.created_at.strftime('%Y-%m-%d') }}</span>
+            </div>
+         </div>
+         <div class="thumb">
+            <img src="{{ url_for('static', filename='course_images/' ~ course.cover_image) }}" alt="">
+            <span>{{ course.video_count }} 部影片</span>
+         </div>
+         <h3 class="title">{{ course.title }}</h3>
+         <a href="{{ url_for('playlist', course_id=course.id) }}" class="inline-btn">觀看課程</a>
+      </div>
+      {% endfor %}
+   </div>
+</section>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}首頁{% endblock %}
+
+
+{% block content %}
+   <div class="background-image"></div>
+   <div class="background-overlay"></div>
+   <section class="hero-section">
+      <h3 class="sub-title">最佳線上課程</h3>
+      <h1 class="main-title">最好的線上學習平台</h1>
+      <p class="description">
+         我們的 e-learning 平台致力於打造一個結合互動學習的數位學習環境。
+         <br><br>
+         無論您是學生、老師，或是終身學習者，這裡都是您探索新知的理想空間。
+         <br><br>
+         平台整合多元課程、影音教材與即時互動功能，讓您能夠依照自己的步調學習。
+         <br><br>
+         透過個人化推薦與學習歷程記錄，提升學習效率與成效。
+         <br><br>
+         不論是提升專業技能、準備考試，或單純拓展知識視野，都能在這裡找到適合您的資源與社群。
+      </p>
+      <div class="buttons">
+         <a href="{{ url_for('register') }}" class="inline-btn">立即加入</a>
+         <a href="{{ url_for('courses') }}" class="inline-btn">觀看課程</a>
+      </div>
+   </section>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}程式執行結果{% endblock %}
+
+{% block content %}
+<section class="playlist-details">
+  <div class="quiz-container">
+    <h1 class="heading">程式執行結果</h1>
+
+    <div class="quiz-question">
+      <h5>執行狀態：</h5>
+      <p><strong>{{ status }}</strong></p>
+    </div>
+
+    {% if stdout %}
+    <div class="quiz-question">
+      <h5>輸出結果：</h5>
+      <pre>{{ stdout }}</pre>
+    </div>
+    {% endif %}
+
+    {% if compile_output %}
+    <div class="quiz-question">
+      <h5>編譯錯誤（compile_output）：</h5>
+      <pre style="color: red;">{{ compile_output }}</pre>
+    </div>
+    {% endif %}
+
+    {% if stderr %}
+    <div class="quiz-question">
+      <h5>執行錯誤（stderr）：</h5>
+      <pre style="color: red;">{{ stderr }}</pre>
+    </div>
+    {% endif %}
+
+    <div class="quiz-question">
+      <h5>結果判斷：</h5>
+      <p>
+        {% if is_correct %}
+          ✅ 正確
+        {% else %}
+          ❌ 錯誤
+        {% endif %}
+      </p>
+    </div>
+
+    {% if ai_suggestion and not is_correct %}
+    <div class="quiz-question">
+      <h5>AI 解釋與修正建議：</h5>
+      <pre style="background:#f9f9f9; padding:10px; white-space:pre-wrap;">{{ ai_suggestion }}</pre>
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('code_quiz') }}" class="inline-btn">再試一次</a>
+  </div>
+</section>
+{% endblock %}
+

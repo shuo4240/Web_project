@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}登入{% endblock %}
+
+{% block content %}
+<section class="form-container">
+   <form action="" method="post" enctype="multipart/form-data">
+      <h3>登入帳號</h3>
+      <p>電子信箱 <span>*</span></p>
+      <input type="email" name="email" placeholder="請輸入電子信箱" required maxlength="50" class="box">
+      <p>密碼 <span>*</span></p>
+      <input type="password" name="pass" placeholder="請輸入密碼" required maxlength="20" class="box">
+      <input type="submit" value="登入" name="submit" class="btn">
+   </form>
+</section>
+{% endblock %}

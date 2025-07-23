@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Blockly 遊戲</title>
+  <script src="https://cdn.jsdelivr.net/npm/blockly@9.2.0/blockly_compressed.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/blockly@9.2.0/blocks_compressed.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/blockly@9.2.0/javascript_compressed.js"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    #blocklyDiv {
+      height: 550px;
+      width: 70%;
+      float: left;
+    }
+    #outputArea {
+      float: left;
+      width: 20%;
+      height: 480px;
+      background: #f7f7f7;
+      padding: 10px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    #court {
+      position: relative; /* 加這一行 */
+      width: 600px;
+      height: 300px;
+      background-image: url("/static/blocky/basketball_court.jpg");
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #333;
+      margin-left: 10px;
+      float: left;
+    }
+
+    button {
+      margin-top: 10px;
+    }
+    #player, #ai{
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;       /* 圓形外框 */
+      border: 2px solid #fff;   /* 可加上白邊，讓輪廓更清楚 */
+      box-shadow: 0 0 5px #000; /* 加陰影更立體 */
+    }
+
+    #ball {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      /* 無邊框與圓角 */
+    }
+
+    #player {
+      position: absolute; /* 確保可移動 */
+      left: 200px;
+      top: 130px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    #ai {
+      left: 350px;
+      top: 130px;
+    }
+
+    #ball {
+      position: absolute;
+      left: 225px;
+      top: 155px;
+    }
+    #blocklyDiv {
+      height: 550px;
+      width: 70%;
+      float: left;
+    }
+
+    #chat-box {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 300px;
+      max-height: 240px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 10px;
+      z-index: 998;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    #aiExplainBtn {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #ai-result {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+</style>
+
+
+
+  </style>
+</head>
+<body>
+
+  <!-- Blockly 編輯區 -->
+  <div id="blocklyDiv"></div>
+
+  <div id="outputArea">
+    <h3>輸出結果：</h3>
+    <pre id="output"></pre>
+    <button onclick="runCode()">▶ 執行程式</button>
+
+    <!-- 放在輸出區塊內的訊息提示 -->
+    <div id="gameOverMessage" style="display:none; margin-top:10px; color:darkred; font-weight:bold;">
+      🏀 球被搶走了！請點下方按鈕重玩
+      <br>
+      <button onclick="resetGame()">🔄 重玩一次</button>
+    </div>
+
+    <div id="successMessage" style="display:none; margin-top:10px; color:green; font-weight:bold;">
+      🎉 恭喜進球！<br>
+      <button onclick="resetGame(true)">🔄 重玩一次</button>
+    </div>    
+  </div>
+
+  <!-- 球場背景區塊 -->
+  <div id="court">
+    <img id="player" src="/static/blocky/player.jpg" alt="player">
+    <img id="ai" src="/static/blocky/ai.jpg" alt="ai">
+    <img id="ball" src="/static/blocky/basketball.png" alt="ball">
+  </div>
+
+  <!-- 從以下開始修改 -->
+
+  <!-- 工具箱 !-->
+  
+  <xml id="toolbox" style="display: none">
+    <category name="動作" colour="180">
+      <block type="move_angle"></block>
+      <block type="stop"></block>
+      <block type="set_speed"></block>
+      <block type="get_position"></block>
+      <block type="shoot_ball"></block>
+    </category>
+
+    <category name="感測" colour="60">
+      <block type="get_my_position"></block>
+      <block type="get_opponent_position"></block>
+      <block type="has_ball"></block>
+      <block type="get_distance_to_opponent"></block> 
+      <block type="get_ball_position"></block>
+      <block type="is_in_shooting_range"></block>
+    </category>
+
+    <category name="數字" colour="230">
+      <block type="math_number"></block>
+      <block type="coordinate_xy"></block>
+    </category>
+
+    <category name="變數" colour="330" custom="VARIABLE"></category>
+
+    <category name="邏輯" colour="210">
+      <block type="controls_if"></block>
+      <block type="logic_compare"></block>
+      <block type="logic_operation"></block>
+      <block type="logic_negate"></block>
+      <block type="logic_boolean"></block>
+    </category>
+
+    <category name="循環" colour="120">
+      <block type="controls_whileUntil"></block>
+    </category>
+  </xml>
+
+  <!-- 機器人 -->
+  <div id="chat-box" style="position: fixed; bottom: 100px; right: 20px; width: 300px; height: 250px; overflow-y: auto; background: white; border-radius: 10px; box-shadow: 0 0 8px rgba(0,0,0,0.2); padding: 10px;"></div>
+  <button id="explainBtn" style="position: fixed; bottom: 30px; right: 20px; background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 10px; font-weight: bold;">生成解釋</button>
+
+  <script>
+    let isShooting = false;
+    let playerX = 200;
+    let playerY = 130;
+    let aiX = 350;
+    let aiY = 130;
+    let playerSpeed = 0;
+    let moveInterval = null;
+    let aiInterval = null;
+
+    function updatePlayerPosition() {
+      const courtWidth = 600;
+      const courtHeight = 300;
+      const playerSize = 40;
+
+      if (playerX < 0 || playerX > courtWidth - playerSize ||
+          playerY < 0 || playerY > courtHeight - playerSize) {
+        stopMove();
+        return;
+      }
+
+      if (isPlayerTouchingAI()) {
+        stopMove();
+        showGameOver();
+        return;
+      }
+
+      document.getElementById('player').style.left = playerX + 'px';
+      document.getElementById('player').style.top = playerY + 'px';
+      updateBallPosition();
+    }
+
+    function updateBallPosition() {
+      const ball = document.getElementById('ball');
+      const offsetX = 25;
+      const offsetY = 25;
+      ball.style.left = (playerX + offsetX) + 'px';
+      ball.style.top = (playerY + offsetY) + 'px';
+    }
+
+    function updateAIPosition() {
+      const ai = document.getElementById('ai');
+      ai.style.left = aiX + 'px';
+      ai.style.top = aiY + 'px';
+    }
+
+    function moveAIToPlayer() {
+      const dx = playerX - aiX;
+      const dy = playerY - aiY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance < 2) return;
+
+      const speed = 1.5;
+      const vx = dx / distance;
+      const vy = dy / distance;
+      aiX += vx * speed;
+      aiY += vy * speed;
+
+      updateAIPosition();
+
+      if (isPlayerTouchingAI()) {
+        stopMove();
+        showGameOver();
+      }
+    }
+
+    function moveAngle(angle, duration, callback = null) {
+      if (moveInterval) clearInterval(moveInterval);
+
+      const rad = angle * Math.PI / 180;
+      const dx = Math.cos(rad) * playerSpeed;
+      const dy = Math.sin(rad) * playerSpeed;
+
+      moveInterval = setInterval(() => {
+        playerX += dx;
+        playerY += dy;
+        updatePlayerPosition();
+      }, 100);
+
+      setTimeout(() => {
+        clearInterval(moveInterval);
+        moveInterval = null;
+        if (callback) callback();
+      }, duration * 1000);
+    }
+
+    function shootBall(callback = null) {
+      if (isShooting || isPlayerTouchingAI()) return;
+
+      isShooting = true;
+
+      const ball = document.getElementById('ball');
+      const basketX = 480;
+      const basketY = 135;
+
+      const rect = ball.getBoundingClientRect();
+      const courtRect = document.getElementById('court').getBoundingClientRect();
+      const startX = rect.left - courtRect.left;
+      const startY = rect.top - courtRect.top;
+
+      const peakY = Math.min(startY, basketY) - 80;
+      const totalFrames = 30;
+      let frame = 0;
+
+      const interval = setInterval(() => {
+        const t = frame / totalFrames;
+        const x = startX + (basketX - startX) * t;
+        const y = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * peakY + t * t * basketY;
+
+        ball.style.left = x + 'px';
+        ball.style.top = y + 'px';
+
+        frame++;
+        if (frame > totalFrames) {
+          clearInterval(interval);
+          isShooting = false;
+          showSuccess();
+          if (callback) callback();
+        }
+      }, 30);
+    }
+
+    function showSuccess() {
+      clearInterval(aiInterval);
+      document.getElementById('successMessage').style.display = 'block';
+    }
+
+    function setSpeed(speed) {
+      playerSpeed = speed;
+    }
+
+    function stopMove() {
+      playerSpeed = 0;
+    }
+
+    function getPosition() {
+      return [playerX, playerY];
+    }
+
+    function runCode() {
+      const allBlocks = workspace.getAllBlocks(false);
+      let hasError = false;
+
+      for (const block of allBlocks) {
+        const type = block.type;
+        const generator = Blockly.JavaScript[type];
+        if (typeof generator !== 'function') {
+          hasError = true;
+        }
+      }
+
+      if (!hasError) {
+        try {
+          const code = Blockly.JavaScript.workspaceToCode(workspace);
+          eval(code);
+        } catch (e) {
+          console.error('⚠️ 執行錯誤：', e);
+        }
+      }
+    }
+
+    function isPlayerTouchingAI() {
+      const threshold = 30;
+      const dx = playerX - aiX;
+      const dy = playerY - aiY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance < threshold;
+    }
+
+    function showGameOver() {
+      clearInterval(moveInterval);
+      clearInterval(aiInterval);
+      moveInterval = null;
+      aiInterval = null;
+      document.getElementById('gameOverMessage').style.display = 'block';
+    }
+
+    function resetGame(clearOutput = false) {
+      playerX = 200;
+      playerY = 130;
+      aiX = 350;
+      aiY = 130;
+      playerSpeed = 0;
+      moveInterval = null;
+      isShooting = false;
+
+      document.getElementById('player').style.left = playerX + 'px';
+      document.getElementById('player').style.top = playerY + 'px';
+      document.getElementById('ai').style.left = aiX + 'px';
+      document.getElementById('ai').style.top = aiY + 'px';
+      updateBallPosition();
+
+      document.getElementById('gameOverMessage').style.display = 'none';
+      document.getElementById('successMessage').style.display = 'none';
+
+      if (clearOutput) {
+        document.getElementById('output').textContent = '';
+      }
+
+      aiInterval = setInterval(moveAIToPlayer, 100);
+    }
+
+    // 定義積木
+
+    // 移動
+    // 以角度移動
+    Blockly.Blocks['move_angle'] = {
+      init: function () {
+        this.appendDummyInput()
+            .appendField("向");
+        this.appendValueInput("ANGLE")
+            .setCheck("Number");
+        this.appendDummyInput()
+            .appendField("°角移動，持續");
+        this.appendValueInput("DURATION")
+            .setCheck("Number");
+        this.appendDummyInput()
+            .appendField("秒");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(180);
+        this.setTooltip("依照角度移動角色，並設定持續秒數");
+      }
+    };
+
+    Blockly.JavaScript['move_angle'] = function(block) {
+      const angle = Blockly.JavaScript.valueToCode(block, 'ANGLE', Blockly.JavaScript.ORDER_ATOMIC) || '0';
+      const duration = Blockly.JavaScript.valueToCode(block, 'DURATION', Blockly.JavaScript.ORDER_ATOMIC) || '1';
+
+      let nextCode = '';
+      if (block.nextConnection && block.nextConnection.targetBlock()) {
+        nextCode = Blockly.JavaScript.blockToCode(block.nextConnection.targetBlock());
+      }
+
+      return `moveAngle(${angle}, ${duration}, function() {\n${nextCode}});\n`;
+    };
+
+
+    // 停止
+    Blockly.Blocks['stop'] = {
+      init: function() {
+        this.appendDummyInput().appendField("停止");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(180);
+        this.setTooltip("停止移動");
+      }
+    };
+    Blockly.JavaScript['stop'] = function(block) {
+      return 'stopMove();\n';
+    };
+
+
+    // 設定速度
+    Blockly.Blocks['set_speed'] = {
+      init: function () {
+        this.appendValueInput("SPEED")
+            .setCheck("Number")
+            .appendField("設定速度為");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(180);
+        this.setTooltip("設定移動速度");
+      }
+    };
+    Blockly.JavaScript['set_speed'] = function(block) {
+      const speed = Blockly.JavaScript.valueToCode(block, 'SPEED', Blockly.JavaScript.ORDER_ATOMIC) || 0;
+      return `setSpeed(${speed});\n`;
+    };
+    
+    // 向某座標移動
+    Blockly.Blocks['get_position'] = {
+      init: function () {
+        this.appendDummyInput()
+            .appendField("向");
+        this.appendValueInput("TARGET")
+            .setCheck("Array"); // 或 "Variable"、"Number"，看你的需要
+        this.appendDummyInput()
+            .appendField("座標前進");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(180);
+        this.setTooltip("向指定座標前進");
+      }
+    };
+    Blockly.JavaScript['get_position'] = function(block) {
+      return ['getPosition()', Blockly.JavaScript.ORDER_ATOMIC];
+    };
+
+    Blockly.Blocks['shoot_ball'] = {
+      init: function () {
+        this.appendDummyInput().appendField("投籃");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(180);
+        this.setTooltip("將球投向籃框");
+      }
+    };
+
+    Blockly.JavaScript['shoot_ball'] = function(block) {
+      let nextCode = '';
+      if (block.nextConnection && block.nextConnection.targetBlock()) {
+        nextCode = Blockly.JavaScript.blockToCode(block.nextConnection.targetBlock());
+      }
+
+      return `shootBall(function() {\n${nextCode}});\n`;
+    };
+
+    Blockly.Blocks['coordinate_xy'] = {
+      init: function () {
+        this.appendValueInput("COORD")
+            .setCheck("Array")
+            .appendField("座標");
+        this.setOutput(true, "Array");
+        this.setColour(230);
+        this.setTooltip("傳回一組 (x, y) 座標陣列");
+      }
+    };
+
+    Blockly.Blocks['create_coordinate'] = {
+      init: function () {
+        this.appendValueInput("X")
+            .setCheck("Number")
+            .appendField("建立座標 x:");
+        this.appendValueInput("Y")
+            .setCheck("Number")
+            .appendField("y:");
+        this.setOutput(true, "Array");
+        this.setColour(230);
+        this.setTooltip("從 x 和 y 數值組合一組座標陣列");
+      }
+    };
+
+    Blockly.JavaScript['create_coordinate'] = function(block) {
+      const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || '0';
+      const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ATOMIC) || '0';
+      return [`[${x}, ${y}]`, Blockly.JavaScript.ORDER_ATOMIC];
+    };   
+
+    // 感測位置
+    // 取得我的座標
+    Blockly.Blocks['get_my_position'] = {
+      init: function () {
+        this.appendDummyInput().appendField("我現在的座標");
+        this.setOutput(true, "Array");
+        this.setColour(60); // 可調整顏色
+        this.setTooltip("回傳目前玩家的座標");
+      }
+    };
+    Blockly.JavaScript['get_my_position'] = function (block) {
+      return ['getMyPosition()', Blockly.JavaScript.ORDER_FUNCTION_CALL];
+    };
+
+    // 取得對手座標
+    Blockly.Blocks['get_opponent_position'] = {
+      init: function () {
+        this.appendDummyInput().appendField("對手現在的座標");
+        this.setOutput(true, "Array");
+        this.setColour(60);
+        this.setTooltip("回傳對手的座標");
+      }
+    };
+    Blockly.JavaScript['get_opponent_position'] = function (block) {
+      return ['getOpponentPosition()', Blockly.JavaScript.ORDER_FUNCTION_CALL];
+    };
+
+    // 是否持球
+    Blockly.Blocks['has_ball'] = {
+      init: function () {
+        this.appendDummyInput().appendField("持球");
+        this.setOutput(true, "Boolean");
+        this.setColour(60);
+        this.setTooltip("回傳是否持有籃球");
+      }
+    };
+    Blockly.JavaScript['has_ball'] = function (block) {
+      return ['hasBall()', Blockly.JavaScript.ORDER_FUNCTION_CALL];
+    };
+
+    // 取得與對手的距離
+    Blockly.Blocks['get_distance_to_opponent'] = {
+      init: function () {
+        this.appendDummyInput().appendField("對手與我的距離");
+        this.setOutput(true, "Number");
+        this.setColour(60);
+        this.setTooltip("取得與對手的距離");
+      }
+    };
+    Blockly.JavaScript['get_distance_to_opponent'] = function(block) {
+      return ['calculateDistanceToOpponent()', Blockly.JavaScript.ORDER_ATOMIC];
+    };
+
+    // 取得球的座標
+    Blockly.Blocks['get_ball_position'] = {
+      init: function () {
+        this.appendDummyInput().appendField("球的位置座標");
+        this.setOutput(true, "Array");
+        this.setColour(60);
+        this.setTooltip("取得球目前位置");
+      }
+    };
+    Blockly.JavaScript['get_ball_position'] = function(block) {
+      return ['[getBallX(), getBallY()]', Blockly.JavaScript.ORDER_ATOMIC];
+    };
+
+    //是否在投籃範圍內
+    Blockly.Blocks['is_in_shooting_range'] = {
+      init: function () {
+        this.appendDummyInput().appendField("在射程範圍內");
+        this.setOutput(true, "Boolean");
+        this.setColour(60);
+        this.setTooltip("是否在投籃距離範圍內");
+      }
+    };
+    Blockly.JavaScript['is_in_shooting_range'] = function(block) {
+      return ['checkShootingRange()', Blockly.JavaScript.ORDER_ATOMIC];
+    }; 
+    
+    // 邏輯
+    // if else
+    Blockly.Blocks['controls_if'] = {
+      init: function () {
+        this.appendValueInput("IF0")
+            .setCheck("Boolean")
+            .appendField("如果");
+        this.appendStatementInput("DO0")
+            .appendField("做");
+        this.appendStatementInput("ELSE")
+            .appendField("否則");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(210);
+        this.setTooltip("如果條件成立則執行，否則執行 else 區塊");
+      }
+    };
+    Blockly.JavaScript['controls_if'] = function(block) {
+      var condition = Blockly.JavaScript.valueToCode(block, 'IF0', Blockly.JavaScript.ORDER_NONE) || 'false';
+      var doBranch = Blockly.JavaScript.statementToCode(block, 'DO0');
+      var elseBranch = Blockly.JavaScript.statementToCode(block, 'ELSE');
+      var code = `if (${condition}) {\n${doBranch}} else {\n${elseBranch}}\n`;
+      return code;
+    };
+
+    // 比較
+    Blockly.Blocks['logic_compare'] = {
+      init: function () {
+        this.appendValueInput("A")
+            .setCheck("Number");
+        this.appendDummyInput()
+            .appendField(new Blockly.FieldDropdown([
+              ["=", "EQ"],
+              ["≠", "NEQ"],
+              ["<", "LT"],
+              [">", "GT"],
+              ["≤", "LTE"],
+              ["≥", "GTE"]
+            ]), "OP");
+        this.appendValueInput("B")
+            .setCheck("Number");
+        this.setOutput(true, "Boolean");
+        this.setColour(210);
+        this.setTooltip("比較兩個數值");
+      }
+    };
+    Blockly.JavaScript['logic_compare'] = function(block) {
+      var OPERATORS = {
+        'EQ': '==',
+        'NEQ': '!=',
+        'LT': '<',
+        'GT': '>',
+        'LTE': '<=',
+        'GTE': '>='
+      };
+      var operator = OPERATORS[block.getFieldValue('OP')];
+      var argument0 = Blockly.JavaScript.valueToCode(block, 'A', Blockly.JavaScript.ORDER_RELATIONAL) || '0';
+      var argument1 = Blockly.JavaScript.valueToCode(block, 'B', Blockly.JavaScript.ORDER_RELATIONAL) || '0';
+      var code = `${argument0} ${operator} ${argument1}`;
+      return [code, Blockly.JavaScript.ORDER_RELATIONAL];
+    };
+
+
+
+    // and / or
+    Blockly.Blocks['logic_operation'] = {
+      init: function () {
+        this.appendValueInput("A")
+            .setCheck("Boolean");
+        this.appendDummyInput()
+            .appendField(new Blockly.FieldDropdown([
+              ["and", "AND"],
+              ["or", "OR"]
+            ]), "OP");
+        this.appendValueInput("B")
+            .setCheck("Boolean");
+        this.setOutput(true, "Boolean");
+        this.setColour(210);
+        this.setTooltip("邏輯 AND / OR");
+      }
+    };
+    Blockly.JavaScript['logic_operation'] = function(block) {
+      var operator = (block.getFieldValue('OP') === 'AND') ? '&&' : '||';
+      var argument0 = Blockly.JavaScript.valueToCode(block, 'A', Blockly.JavaScript.ORDER_LOGICAL_AND) || 'false';
+      var argument1 = Blockly.JavaScript.valueToCode(block, 'B', Blockly.JavaScript.ORDER_LOGICAL_AND) || 'false';
+      var code = `${argument0} ${operator} ${argument1}`;
+      return [code, Blockly.JavaScript.ORDER_LOGICAL_AND];
+    };
+
+
+    // not
+    Blockly.Blocks['logic_negate'] = {
+      init: function () {
+        this.appendValueInput("BOOL")
+            .setCheck("Boolean")
+            .appendField("not");
+        this.setOutput(true, "Boolean");
+        this.setColour(210);
+        this.setTooltip("布林反向 (not)");
+      }
+    };
+    Blockly.JavaScript['logic_negate'] = function(block) {
+      var argument = Blockly.JavaScript.valueToCode(block, 'BOOL', Blockly.JavaScript.ORDER_LOGICAL_NOT) || 'false';
+      var code = `!(${argument})`;
+      return [code, Blockly.JavaScript.ORDER_LOGICAL_NOT];
+    };
+
+
+    // bool
+    Blockly.Blocks['logic_boolean'] = {
+      init: function () {
+        this.appendDummyInput()
+            .appendField(new Blockly.FieldDropdown([
+              ["是", "TRUE"],
+              ["不是", "FALSE"]
+            ]), "BOOL");
+        this.setOutput(true, "Boolean");
+        this.setColour(210);
+        this.setTooltip("布林值 true / false");
+      }
+    };
+    Blockly.JavaScript['logic_boolean'] = function(block) {
+      var code = (block.getFieldValue('BOOL') === 'TRUE') ? 'true' : 'false';
+      return [code, Blockly.JavaScript.ORDER_ATOMIC];
+    };
+
+    // 循環
+    Blockly.Blocks['controls_whileUntil'] = {
+      init: function () {
+        this.appendValueInput("BOOL")
+            .setCheck("Boolean")
+            .appendField(new Blockly.FieldDropdown([["while", "WHILE"], ["until", "UNTIL"]]), "MODE");
+        this.appendStatementInput("DO")
+            .appendField("重複執行");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(120);
+        this.setTooltip("當條件為 true（或直到為 true）時執行區塊");
+      }
+    };
+
+    Blockly.JavaScript['controls_whileUntil'] = function (block) {
+      const mode = block.getFieldValue('MODE');
+      const condition = Blockly.JavaScript.valueToCode(block, 'BOOL', Blockly.JavaScript.ORDER_NONE) || 'false';
+      const branch = Blockly.JavaScript.statementToCode(block, 'DO');
+
+      let code = '';
+      if (mode === 'WHILE') {
+        code = `while (${condition}) {\n${branch}}\n`;
+      } else {
+        code = `while (!(${condition})) {\n${branch}}\n`;
+      }
+
+      return code;
+    };
+    // 初始化 Blockly
+    const workspace = Blockly.inject('blocklyDiv', {
+      toolbox: document.getElementById('toolbox'),
+      trashcan: true
+    });
+
+
+    function generatePrompt(block) {
+      switch (block.type) {
+        case 'move_angle': {
+          const angleBlock = block.getInputTargetBlock('ANGLE');
+          const durationBlock = block.getInputTargetBlock('DURATION');
+          const angle = angleBlock ? angleBlock.getFieldValue('NUM') : '0';
+          const duration = durationBlock ? durationBlock.getFieldValue('NUM') : '1';
+          return `角色會朝 ${angle} 度方向移動 ${duration} 秒。`;
+        }
+
+        case 'set_speed': {
+          const speedBlock = block.getInputTargetBlock('SPEED');
+          const speed = speedBlock ? speedBlock.getFieldValue('NUM') : '0';
+          return `設定角色的速度為 ${speed}。`;
+        }
+
+        case 'stop':
+          return `讓角色停止移動，不再前進。`;
+
+        case 'shoot_ball':
+          return `角色投出一顆籃球，嘗試得分。`;
+
+        case 'get_position':
+          return `取得角色目前所在的位置座標。`;
+
+        case 'get_my_position':
+          return `偵測自己現在在球場上的位置。`;
+
+        case 'get_opponent_position':
+          return `偵測對手目前的位置。`;
+
+        case 'has_ball':
+          return `檢查角色是否正持有籃球。`;
+
+        case 'get_distance_to_opponent':
+          return `計算角色與對手之間的距離有多遠。`;
+
+        case 'get_ball_position':
+          return `偵測籃球目前的位置座標。`;
+
+        case 'is_in_shooting_range':
+          return `檢查角色是否站在可以投籃的位置上。`;
+
+        case 'create_coordinate': {
+          const xBlock = block.getInputTargetBlock('X');
+          const yBlock = block.getInputTargetBlock('Y');
+          const x = xBlock ? xBlock.getFieldValue('NUM') : '0';
+          const y = yBlock ? yBlock.getFieldValue('NUM') : '0';
+          return `建立一個位置，橫座標是 ${x}，縱座標是 ${y}。`;
+        }
+
+        case 'logic_compare':
+          return `使用比較符號（例如大於、小於或等於）來比較兩個數字。`;
+
+        case 'logic_operation':
+          return `使用「而且」或「或者」來結合兩個條件。`;
+
+        case 'logic_negate':
+          return `將條件顛倒，例如將「是」變成「不是」。`;
+
+        case 'logic_boolean':
+          return `設定一個布林值，表示「是」或「不是」。`;
+
+        case 'controls_if':
+          return `設定一個「如果...就...否則...」的條件流程。`;
+
+        case 'controls_whileUntil': {
+          const mode = block.getFieldValue('MODE');
+          return (mode === 'WHILE') ?
+            `當條件成立時就一直重複做某件事。` :
+            `直到條件成立前都會一直重複做某件事。`;
+        }
+
+        default:
+          return '';
+      }
+    }
+
+    document.getElementById('explainBtn').addEventListener('click', () => {
+      const blocks = workspace.getAllBlocks(false);
+      let allPrompts = [];
+
+      blocks.forEach(block => {
+        const prompt = generatePrompt(block);
+        if (prompt) {
+          allPrompts.push(prompt);
+        }
+      });
+
+      if (allPrompts.length === 0) {
+        document.getElementById('chat-box').innerHTML = '<em>目前沒有積木使用。</em>';
+        return;
+      }
+
+      const combinedPrompt = allPrompts.join('。') + '。請將上述動作整合成一段清楚的敘述。';
+
+      fetch('http://127.0.0.1:5000/ai-rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: combinedPrompt })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const rewritten = data.rewrittenText;
+        document.getElementById('chat-box').innerHTML = `<div>${rewritten}</div>`;
+      })
+      .catch(err => {
+        document.getElementById('chat-box').innerHTML = `<div>⚠️ 發送失敗，請檢查伺服器或 API。</div>`;
+      });
+    });
+  </script>
+  
+
+</body>
+</html>

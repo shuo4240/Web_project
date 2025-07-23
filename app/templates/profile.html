@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}個人資料{% endblock %}
+
+{% block content %}
+
+<section class="user-profile">
+   <h1 class="heading">你的個人資料</h1>
+   <div class="info">
+      <div class="user">
+         <img src="{{ url_for('static', filename='images/pic-1.png') }}" class="image" alt="大頭照">
+         <h3>{{ session.get('user_name', '訪客') }}</h3>
+         <p>{{ session.get('user_role', '') }}</p>
+         <a href="{{ url_for('update_profile') }}" class="inline-btn">修改資料</a>
+      </div>
+
+      <div class="box-container">
+         <div class="box">
+            <div class="flex">
+               <i class="fas fa-bookmark"></i>
+               <div><span>{{ bookmark_count }}</span><p>收藏播放清單</p></div>
+            </div>
+            <a href="#" class="inline-btn">查看播放清單</a>
+         </div>
+
+         <div class="box">
+            <div class="flex">
+               <i class="fas fa-heart"></i>
+               <div><span>{{ like_count }}</span><p>喜歡的影片</p></div>
+            </div>
+            <a href="#" class="inline-btn">查看影片</a>
+         </div>
+         
+         <div class="box">
+            <div class="flex">
+               <i class="fas fa-clipboard-list"></i>
+               <div><span>{{ quiz_count }}</span><p>歷史測驗紀錄</p></div>
+            </div>
+            <a href="{{ url_for('quiz_history') }}" class="inline-btn">查看歷史答題</a>
+         </div>
+      </div>
+   </div>
+</section>
+
+{% endblock %}

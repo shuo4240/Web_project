@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.title }} - 播放清單{% endblock %}
+
+{% block content %}
+
+<section class="playlist-details">
+   <h1 class="heading" style="display: flex; align-items: center; gap: 10px;">
+      {{ course.title }}
+      <form action="{{ url_for('toggle_bookmark', course_id=course.id) }}" method="POST" style="display:inline;">
+         <button type="submit" class="bookmark-btn {% if is_bookmarked %}bookmarked{% endif %}">
+            <i class="fas fa-bookmark"></i>
+         </button>
+      </form>
+   </h1>
+
+   <div class="row">
+      <div class="column">
+         <div class="thumb">
+            <img src="{{ url_for('static', filename='course_images/' ~ course.cover_image) }}" class="image" alt="封面">
+            <span>{{ videos|length }} 部影片</span>
+         </div>
+      </div>
+      <div class="column">
+         <div class="tutor">
+            <img src="{{ url_for('static', filename='images/pic-1.jpg') }}" class="image" alt="講師圖片">
+            <div>
+               <h3>{{ course.teacher.name }}</h3>
+               <span>{{ course.created_at.strftime('%Y-%m-%d') }}</span>
+            </div>
+         </div>
+         <div class="details">
+            <p>{{ course.description }}</p>
+            <a href="{{ url_for('teachers') }}" class="inline-btn">查看講師</a>
+         </div>
+      </div>
+   </div>
+</section>
+
+<section class="upload-video">
+   <h1 class="heading">上傳新影片</h1>
+   <button id="uploadBtn" class="inline-btn"><i class="fas fa-cloud-upload-alt"></i> 上傳至 YouTube</button>
+</section>
+
+<div id="uploadModal" class="modal" style="display:none;">
+   <div class="modal-content" style="max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 8px;">
+      <h3 style="margin-bottom: 20px;">上傳影片至 YouTube</h3>
+      <div style="margin-bottom: 15px;">
+         <label for="videoTitle">影片標題</label>
+         <input type="text" id="videoTitle" required style="width: 100%; padding: 8px;">
+      </div>
+      <div style="margin-bottom: 15px;">
+         <label for="videoDescription">影片說明</label>
+         <textarea id="videoDescription" rows="3" required style="width: 100%; padding: 8px;"></textarea>
+      </div>
+      <div style="margin-bottom: 20px;">
+         <label for="videoFile">影片檔案</label>
+         <input type="file" id="videoFile" accept="video/*" required>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+         <button onclick="document.getElementById('uploadModal').style.display='none'" class="inline-btn" style="background-color: #ccc;">取消</button>
+         <button id="submitUpload" class="inline-btn" style="background-color: #7e57c2;">送出上傳</button>
+      </div>
+   </div>
+</div>
+
+<section class="playlist-videos">
+   <h1 class="heading">播放清單影片</h1>
+   <div class="box-container">
+      {% for video in videos %}
+         <div class="box">
+            <a href="https://www.youtube.com/watch?v={{ video.youtube_id }}" target="_blank">
+               <i class="fas fa-play"></i>
+               <img src="https://img.youtube.com/vi/{{ video.youtube_id }}/hqdefault.jpg" alt="YouTube 縮圖">
+               <h3>{{ video.title }}</h3>
+            </a>
+            <button class="like-btn {% if video.id in liked_video_ids %}liked{% endif %}" data-video-id="{{ video.id }}">
+               <i class="fas fa-heart"></i>
+            </button>
+         </div>
+      {% endfor %}
+   </div>
+</section>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js"></script>
+<script>
+   const CLIENT_ID = '716549970361-28j7dg9ekkrhh6umfteum8mh412vlh0m.apps.googleusercontent.com';
+   const API_KEY = 'AIzaSyAa8YUc3KDlSMZhuMVWJsfFbXvpfAAG7H4';
+   const SCOPES = 'https://www.googleapis.com/auth/youtube.upload';
+   const courseId = "{{ course.id }}";
+   let tokenClient;
+   let youtubeInitialized = false;
+
+   document.getElementById('uploadBtn').addEventListener('click', async () => {
+      if (!youtubeInitialized) {
+         await new Promise(resolve => gapi.load('client', resolve));
+         await gapi.client.init({ apiKey: API_KEY });
+         youtubeInitialized = true;
+      }
+      if (!tokenClient) {
+         tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: (tokenResponse) => {
+               if (tokenResponse.error) return alert('授權失敗');
+               gapi.client.setToken(tokenResponse);
+               document.getElementById('uploadModal').style.display = 'block';
+            }
+         });
+      }
+      tokenClient.requestAccessToken();
+   });
+
+   document.getElementById('submitUpload').addEventListener('click', async () => {
+      const title = document.getElementById('videoTitle').value.trim();
+      const description = document.getElementById('videoDescription').value.trim();
+      const file = document.getElementById('videoFile').files[0];
+      if (!title || !description || !file) return alert('請填寫所有欄位並選擇影片');
+      document.getElementById('uploadModal').style.display = 'none';
+      await uploadToYouTube(file, title, description);
+   });
+
+   async function uploadToYouTube(file, title, description) {
+      const metadata = {
+         snippet: { title, description, categoryId: "22" },
+         status: { privacyStatus: "private" }
+      };
+      const initRes = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
+         method: 'POST',
+         headers: {
+            'Authorization': 'Bearer ' + gapi.client.getToken().access_token,
+            'Content-Type': 'application/json',
+            'X-Upload-Content-Type': file.type
+         },
+         body: JSON.stringify(metadata)
+      });
+
+      const uploadUrl = initRes.headers.get('Location');
+      if (!uploadUrl) {
+         const errorText = await initRes.text();
+         alert('無法取得上傳連結：' + errorText);
+         return;
+      }
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl, true);
+      xhr.setRequestHeader('Content-Type', file.type);
+      xhr.upload.onprogress = (e) => {
+         if (e.lengthComputable) {
+            console.log(`Uploading: ${Math.round((e.loaded / e.total) * 100)}%`);
+         }
+      };
+      xhr.onload = () => {
+         if (xhr.status < 400) {
+            const response = JSON.parse(xhr.responseText);
+            alert(`上傳成功！影片 ID: ${response.id}`);
+            fetch('/upload_youtube', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({
+                  title: title,
+                  description: description,
+                  youtube_id: response.id,
+                  course_id: courseId
+               })
+            }).then(res => res.json()).then(data => {
+               location.reload();
+            });
+         } else {
+            alert(`上傳失敗: ${xhr.statusText}`);
+         }
+      };
+      xhr.onerror = () => alert('網路錯誤，無法上傳影片');
+      xhr.send(file);
+   }
+
+   document.querySelectorAll('.like-btn').forEach(btn => {
+      btn.addEventListener('click', function (e) {
+         e.preventDefault();
+         const videoId = this.getAttribute('data-video-id');
+         const icon = this.querySelector('i');
+         const liked = icon.style.color === 'red';
+         const newColor = liked ? 'white' : 'red';
+
+         fetch('/toggle_video_like', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ video_id: videoId, like: !liked })
+         }).then(res => res.json()).then(data => {
+            if (data.success) icon.style.color = newColor;
+            else alert('收藏失敗：' + data.message);
+         }).catch(() => alert('無法連接伺服器'));
+      });
+   });
+</script>
+
+{% endblock %}
