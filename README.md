@@ -22,3 +22,20 @@
 -	整合Google Custom Search API作為爬蟲工具，自動搜尋相關主題文章或教學內容，作為補強與延伸閱讀。
 -	提供錯題回顧系統，並以Chart.js視覺化學生的學習成果。
 -	透過 APScheduler 工作流程管理，每日定時寄送學習成果報告與錯題整理至學生 Gmail。
+
+### 執行環境需求
+- Python 3.8+
+- Flask
+- APScheduler
+- SQLite3
+- Chart.js（前端）
+- Jinja2
+- 具 Google Gmail 發信權限之應用程式密鑰
+  
+使用下列 API：
+- QuizAPI
+- Judge0 API
+- Cohere API
+- YouTube Data API v3
+- Google Custom Search API
+
