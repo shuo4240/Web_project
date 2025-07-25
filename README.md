@@ -30,7 +30,6 @@
 - SQLite3
 - Chart.js（前端）
 - Jinja2
-- 具 Google Gmail 發信權限之應用程式密鑰
   
 使用下列 API：
 - QuizAPI
