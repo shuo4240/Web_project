@@ -39,6 +39,6 @@
 - Google Custom Search API
 
 ### 系統架構
-https://github.com/shuo4240/Web_project/blob/main/images/%E7%B3%BB%E7%B5%B1%E6%9E%B6%E6%A7%8B%E5%9C%96.jpg
+[https://github.com/shuo4240/Web_project/blob/main/images/%E7%B3%BB%E7%B5%B1%E6%9E%B6%E6%A7%8B%E5%9C%96.jpg]
 
 ### 程式實際執行畫面
