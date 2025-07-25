@@ -60,10 +60,28 @@
 ![前導劇情](https://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%875.png)
 
 - 任務1
-![任務1](http://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%876.png)
+
+![任務1](https://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%876.png)
 
 - 任務2
+
 ![任務2](https://github.com/shuo4240/Web_project/blob/main/images/%E9%81%8A%E6%88%B2%E4%BB%BB%E5%8B%992.jpg)
+
+- 任務3
+
+![任務3](https://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%878.png)
+
+- 任務4
+
+![任務4](https://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%879.png)
+
+- Blockly遊戲
+
+![Blockly](https://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%8710.png)
+
+- 資料庫設計
+
+![資料庫](https://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%8711.png)
 
 
 
