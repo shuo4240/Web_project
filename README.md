@@ -39,6 +39,33 @@
 - Google Custom Search API
 
 ### 系統架構
-![系統架構圖](https://github.com/shuo4240/Web_project/blob/main/images/%E7%B3%BB%E7%B5%B1%E6%9E%B6%E6%A7%8B%E5%9C%96.jpg)
+
+![系統架構圖](https://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%871.png))
 
 ### 程式實際執行畫面
+- 前端
+
+![前端](https://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%872.png)
+
+- 課程總覽頁面
+
+![課程總覽](https://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%873.png)
+
+- 題目解析頁面
+ 
+![題目解析](https://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%874.png)
+
+- 任務前導劇情
+
+![前導劇情](https://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%875.png)
+
+- 任務1
+![任務1](http://github.com/shuo4240/Web_project/blob/main/images/%E5%9C%96%E7%89%876.png)
+
+- 任務2
+![任務2](https://github.com/shuo4240/Web_project/blob/main/images/%E9%81%8A%E6%88%B2%E4%BB%BB%E5%8B%992.jpg)
+
+
+
+
+
